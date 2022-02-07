@@ -1,0 +1,32 @@
+{% extends "base.html" %} {% block title %}Login{% endblock %} {% block content %}
+<form method="POST">
+    <h3 align="center">Add a Payment</h3>
+    <div class="input-group mb-3">
+        <label class="input-group-text" for="bank_name">Bank Name</label>
+        <select class="form-select" id="bank_name" name = "bank_name">
+          <option selected>Choose...</option>
+            <option value="1">Askari</option>
+            <option value="2">DIBL</option>
+            <option value="3">HBL</option>
+        </select>
+    </div>
+    <div class="input-group mb-3">
+        <label class="input-group-text" for="payment_type">Payment Type</label>
+        <select class="form-select" id="payment_type" name = payment_type>
+          <option selected>Choose...</option>
+            <option value="1">Principal</option>
+            <option value="2">Markup</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="amount">Amount</label>
+        <input type="amount" class="form-control" id="amount" name="amount" placeholder="Enter amount paid" />
+    </div>
+    <div class="form-group ">
+        <label for="date">Date</label>
+        <input type="date" class="form-control" id="date" name="date" placeholder="DD/MM/YYYY" />
+    </div>
+    <br />
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}

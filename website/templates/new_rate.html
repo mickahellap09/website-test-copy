@@ -1,0 +1,10 @@
+{% extends "base.html" %} {% block title %}Login{% endblock %} {% block content %}
+<form method="POST">
+    <h3 align="center">New Rate</h3>
+    <div class="form-group">
+        <label for="new_rate">KIBOR Rate</label>
+        <input type="new_rate" class="form-control" id="new_rate" name="new_rate" placeholder="Enter new KIBOR rate for this month">
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}
