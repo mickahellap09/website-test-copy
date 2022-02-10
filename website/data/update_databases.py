@@ -74,24 +74,29 @@ def principal_calculations():
             cur.execute(
                 'SELECT balance FROM PRINCIPAL WHERE id = (?)', (date_id,))
             balance = cur.fetchone()
+            cur.execute(
+                    'SELECT debit, credit FROM PRINCIPAL WHERE id BETWEEN 1 AND (?)', (date_id,))
+            all_debit_credit = cur.fetchall()
+
+            for value in all_debit_credit:
+                if value == (None, None):
+                    pass
+                else:
+                    if value[1] == None:
+                        total += value[0]
+                    elif value[0] == None:
+                        total += value[1]
+                    else:
+                        total = total + value[0] + value[1]
 
             if balance == None:
                 cur.execute(
-                    'SELECT debit, credit FROM PRINCIPAL WHERE id BETWEEN 1 AND (?)', (date_id,))
-                all_debit_credit = cur.fetchall()
+                    'INSERT INTO PRINCIPAL (balance, date_id) VALUES (?, ?)', (total, date_id,))
+            else:
+                cur.execute(
+                    'UPDATE PRINCIPAL SET balance = (?) WHERE PRINCIPAL.date_id = (?)', (total,date_id,)
+                )
 
-                for value in all_debit_credit:
-                    if value == (None, None):
-                        pass
-                    else:
-                        if value[1] == None:
-                            total += value[0]
-                        elif value[0] == None:
-                            total += value[1]
-                        else:
-                            total = total + value[0] + value[1]
-                        cur.execute(
-                            'INSERT INTO PRINCIPAL (balance, date_id) VALUES (?, ?)', (total, date_id,))
 
         conn.commit()
         conn.close()
@@ -167,98 +172,96 @@ def markup_calculations():
                 'SELECT balance FROM MARKUP WHERE id = (?)', (date_id,))
             balance = cur.fetchone()
 
-            if balance == None:
-                cur.execute(
-                    'SELECT debit, credit FROM PRINCIPAL WHERE id BETWEEN 1 AND (?)', (date_id,))
-                all_debit_credit = cur.fetchall()
+            cur.execute(
+                'SELECT debit, credit FROM PRINCIPAL WHERE id BETWEEN 1 AND (?)', (date_id,))
+            all_debit_credit = cur.fetchall()
 
-                for value in all_debit_credit:
+            for value in all_debit_credit:
+                if value == (None, None):
+                    pass
+                else:
+                    if value[1] == None:
+                        total_debit += value[0]
+                    elif value[0] == None:
+                        total_credit += value[1]
+                    else:
+                        total_debit += value[0]
+                        total_credit += value[1]
+
+            if bank_name == 'HBL':
+                cur.execute(
+                    'SELECT rate FROM PRINCIPAL WHERE rate IS NOT NULL AND id <= (?) ORDER BY id DESC LIMIT 1', (date_id,))
+                rate = cur.fetchone()[0]
+
+                total = total_debit + total_credit
+
+                value_total = markup_debit_formula(rate, total)
+
+                total_markup_balance += value_total
+
+            else:
+                cur.execute('SELECT debit FROM PRINCIPAL')
+                all_debit = cur.fetchall()
+                for value in all_debit:
                     if value == (None, None):
                         pass
+                    elif value == (None,):
+                        pass
                     else:
-                        if value[1] == None:
-                            total_debit += value[0]
-                        elif value[0] == None:
-                            total_credit += value[1]
+                        value = value[0]
+
+                        if abs(total_credit) >= value:
+                            total_credit += value
+                            total_debit = total_debit - value
+                            continue
                         else:
-                            total_debit += value[0]
-                            total_credit += value[1]
+                            total = total_debit + total_credit
 
-                if bank_name == 'HBL':
-                    cur.execute(
-                        'SELECT rate FROM PRINCIPAL WHERE rate IS NOT NULL AND id <= (?) ORDER BY id DESC LIMIT 1', (date_id,))
-                    rate = cur.fetchone()[0]
+                            if total > value:
+                                cur.execute(
+                                    'SELECT rate FROM PRINCIPAL WHERE debit = (?)', (value,))
+                                rate = cur.fetchone()[0]
 
-                    total = total_debit + total_credit
-
-                    value_total = markup_debit_formula(rate, total)
-
-                    total_markup_balance += value_total
-
-                else:
-                    cur.execute('SELECT debit FROM PRINCIPAL')
-                    all_debit = cur.fetchall()
-                    for value in all_debit:
-                        if value == (None, None):
-                            pass
-                        elif value == (None,):
-                            pass
-                        else:
-                            value = value[0]
-
-                            if abs(total_credit) >= value:
-                                total_credit += value
-                                total_debit = total_debit - value
+                                value_total = markup_debit_formula(
+                                    rate, value)
+                                total_markup_balance += value_total
+                                total = total - value
                                 continue
                             else:
-                                total = total_debit + total_credit
+                                cur.execute(
+                                    'SELECT rate FROM PRINCIPAL WHERE debit = (?)', (value,))
+                                rate = cur.fetchone()[0]
 
-                                if total > value:
-                                    cur.execute(
-                                        'SELECT rate FROM PRINCIPAL WHERE debit = (?)', (value,))
-                                    rate = cur.fetchone()[0]
-
-                                    value_total = markup_debit_formula(
-                                        rate, value)
-                                    total_markup_balance += value_total
-                                    total = total - value
-                                    continue
-                                else:
-                                    cur.execute(
-                                        'SELECT rate FROM PRINCIPAL WHERE debit = (?)', (value,))
-                                    rate = cur.fetchone()[0]
-
-                                    value_total = markup_debit_formula(
-                                        rate, total)
-                                total_markup_balance += value_total
+                                value_total = markup_debit_formula(
+                                    rate, total)
+                            total_markup_balance += value_total
+            if balance == None:
                 cur.execute(
                     'INSERT INTO MARKUP (date_id, debit) VALUES (?, ?)', (date_id, total_markup_balance,))
+            else:
+                cur.execute('UPDATE MARKUP SET debit = (?) WHERE date_id = (?)', (total_markup_balance, date_id,))
+
+            if balance == (None,):
+                cur.execute(
+                    'SELECT debit FROM MARKUP WHERE id = (?)', (date_id,))
+                debit = cur.fetchone()
+                if debit == (None,):
+                    pass
+                else:
+                    debit = debit[0]
+                    total_balance += debit
 
                 cur.execute(
-                    'SELECT balance FROM MARKUP WHERE id = (?)', (date_id,))
-                balance = cur.fetchone()
+                    'SELECT credit FROM MARKUP WHERE id = (?)', (date_id,))
+                credit = cur.fetchone()
+                if credit == (None,):
+                    pass
+                else:
+                    credit = credit[0]
+                    total_balance += credit
 
-                if balance == (None,):
-                    cur.execute(
-                        'SELECT debit FROM MARKUP WHERE id = (?)', (date_id,))
-                    debit = cur.fetchone()
-                    if debit == (None,):
-                        pass
-                    else:
-                        debit = debit[0]
-                        total_balance += debit
-
-                    cur.execute(
-                        'SELECT credit FROM MARKUP WHERE id = (?)', (date_id,))
-                    credit = cur.fetchone()
-                    if credit == (None,):
-                        pass
-                    else:
-                        credit = credit[0]
-                        total_balance += credit
-
-                    cur.execute(
-                        'UPDATE MARKUP SET balance = (?) WHERE id = (?)', (total_balance, date_id,))
+                cur.execute(
+                    'UPDATE MARKUP SET balance = (?) WHERE id = (?)', (total_balance, date_id,))
 
         conn.commit()
         conn.close()

@@ -1,6 +1,7 @@
 import PySimpleGUI as sg
 import pandas as pd
 import sqlite3
+import os
 
 conn_banks = sqlite3.connect(
     r'C:\Users\Taimur Adam\Desktop\website test copy\website\data\databases\all_banks.sqlite')
@@ -10,7 +11,6 @@ cur_banks.execute('SELECT name FROM BANKS')
 bank_names = cur_banks.fetchall()
 add_new_bank = 'Add New Bank'
 bank_names.append(add_new_bank)
-print(bank_names)
 
 # Add some color to the window
 sg.theme('DarkTeal9')
@@ -40,8 +40,9 @@ while True:
 
         for name in bank_names:
             if name == 'Add New Bank':
-                cur_banks.execute(
-                    'INSERT INTO BANKS (name) VALUES (?)', (bank_names))
+                filepath = r'C:\Users\Taimur Adam\Desktop\website test copy\website\data\add_new_bank_form.py'
+                os.startfile(filepath)
+                break
             else:
                 name_of_bank = name_of_bank[0]
 

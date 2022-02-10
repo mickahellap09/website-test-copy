@@ -2,7 +2,7 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
-from data import update_databases, create_all_dbs, add_form_data
+from data import update_databases, create_all_dbs
 
 app = Flask(__name__)
 app.secret_key = "saldhjaslkjhdlkas"
@@ -170,83 +170,24 @@ def new_rate():
 
 @app.route('/finance/bank_borrowing', methods=["GET", "POST"])
 def bank_borrowing():
-
-    #filepath = r'C:\Users\Taimur Adam\Desktop\website test copy\website\data\debit_form.py'
-    # os.startfile(filepath)
-
     if "user" in session:
-        if request.method == "POST":
-            bank_name = request.form.get('bank_name')
-            rate = request.form.get('rate')
-            amount = request.form.get('amount')
-            date = request.form.get('date')
-
-            add_form_data.debit_form(bank_name, rate, amount, date)
-
-            flash('Transaction added.', category='success')
-
-            return render_template('debit_form.html')
-        else:
-            return render_template('debit_form.html')
+        filepath = r'C:\Users\Taimur Adam\Desktop\website test copy\website\data\debit_form.py'
+        os.startfile(filepath)
+        return redirect(url_for('index'))
     else:
         flash('Please login to access this page.', category='error')
         return redirect(url_for('login'))
 
 
-@app.route('/finance/payments', methods=["GET", "POST"])
+@app.route('/finance/payments')
 def payments():
-    #filepath = r'C:\Users\Taimur Adam\Desktop\website test copy\website\data\payment_form.py'
-    # os.startfile(filepath)
     if "user" in session:
-        if request.method == "POST":
-            bank_name = request.form.get('bank_name')
-            payment_type = request.form.get('payment_type')
-            amount = request.form.get('amount')
-            date = request.form.get('date')
-
-            add_form_data.payment_form(bank_name, payment_type, amount, date)
-
-            flash('Payment added.', category='success')
-
-            return render_template('payment_form.html')
-        else:
-            return render_template('payment_form.html')
+        filepath = r'C:\Users\Taimur Adam\Desktop\website test copy\website\data\payment_form.py'
+        os.startfile(filepath)
+        return redirect(url_for('index'))
     else:
         flash('Please login to access this page.', category='error')
         return redirect(url_for('login'))
-
-
-@app.route('/admin/add_new_bank', methods=["GET", "POST"])
-def add_new_bank():
-    if "user" in session:
-        user = session['user']
-        cur_users.execute(
-            'SELECT role FROM users WHERE users.username = ?', (user,))
-        role = cur_users.fetchone()[0]
-        if role == 0:
-            if request.method == 'POST':
-                bank_name = request.form.get('bank_name')
-                rate = request.form.get('rate')
-                amount = request.form.get('amount')
-                date = request.form.get('date')
-
-                rate = float(rate)
-                amount = int(amount)
-
-                create_all_dbs.add_new_bank(bank_name, rate, amount, date)
-
-                flash('Bank successfully added.', category='success')
-
-                return redirect(url_for('index'))
-            else:
-                return render_template('add_new_bank.html')
-        else:
-            flash('You are not authorized to access this page.', category='error')
-            return redirect(url_for('index'))
-    else:
-        flash('Please login to access this page.', category='error')
-        return redirect(url_for('login'))
-
 
 if __name__ == "__main__":
     app.run(debug=True)

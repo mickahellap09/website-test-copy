@@ -1,5 +1,4 @@
 import sqlite3
-from datetime import datetime
 
 conn_banks = sqlite3.connect(
     r'C:\Users\Taimur Adam\Desktop\website test copy\website\data\databases\all_banks.sqlite', check_same_thread=False)
@@ -35,7 +34,7 @@ def create():
         create_tables(name)
 
 
-def add_new_bank(name, rate, amount, date):
+def add_new_bank(name, rate, date):
     name = name.upper().strip()
     cur_banks.execute('INSERT INTO BANKS (name) VALUES (?)', (name,))
     conn_banks.commit()
@@ -46,21 +45,11 @@ def add_new_bank(name, rate, amount, date):
     conn = sqlite3.connect(path, check_same_thread=False)
     cur = conn.cursor()
 
-    print(date)
-
-    day = date[8:10]
-    print(day)
-    month = date[5:7]
-    print(month)
-    year = date[0:4]
-    print(year)
-    date = day+'/'+month+'/'+year
-
     cur.execute('INSERT INTO DATES(date) VALUES (?)', (date,))
     cur.execute('SELECT id FROM DATES WHERE DATES.date = (?)', (date,))
     date_id = cur.fetchone()[0]
 
     cur.execute(
-        'INSERT INTO PRINCIPAL (date_id, rate, debit, balance) VALUES (?,?,?,?)', (date_id, rate, amount, amount,))
+        'INSERT INTO PRINCIPAL (date_id, rate, debit, balance) VALUES (?,?,?,?)', (date_id, rate, 0, 0,))
 
     conn.commit()
