@@ -2,7 +2,9 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
-from data import update_databases, create_all_dbs
+from data import update_databases, main
+
+main.start()
 
 app = Flask(__name__)
 app.secret_key = "saldhjaslkjhdlkas"
@@ -15,12 +17,14 @@ conn_banks = sqlite3.connect(
     r'C:\Users\Taimur Adam\Desktop\website test copy\website\data\databases\all_banks.sqlite', check_same_thread=False)
 cur_banks = conn_banks.cursor()
 
+cur_banks.execute('SELECT name FROM banks')
+all_banks = cur_banks.fetchall()
+
 cur_users.executescript('''
 
 CREATE TABLE IF NOT EXISTS users(id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, username TEXT UNIQUE, password TEXT, role INTEGER);
 
 ''')
-
 
 @app.route('/')
 def index():
@@ -129,21 +133,19 @@ def add_new_user():
 
 @app.route('/finance/reports')
 def reports():
-    if "user" in session:
 
-        check_if_rate = update_databases.check_hbl()
+    global check_if_rate
+    
+    if "user" in session:
+        for bank_name in all_banks:
+            bank_name = bank_name[0]
+            
+            check_if_rate = update_databases.check_conventional(bank_name)
         if check_if_rate == True:
             return(redirect(url_for('new_rate')))
         else:
 
-            filepath = r'C:\Users\Taimur Adam\Desktop\website test copy\website\data\create_all_dbs.py'
-            os.startfile(filepath)
-
-            filepath = r'C:\Users\Taimur Adam\Desktop\website test copy\website\data\update_databases.py'
-            os.startfile(filepath)
-
-            filepath = r'C:\Users\Taimur Adam\Desktop\website test copy\website\data\create_reports.py'
-            os.startfile(filepath)
+            main.update()
 
             filepath = r'C:\Users\Taimur Adam\Desktop\website test copy\website\data\reports\bank_data.xlsx'
             os.startfile(filepath)
@@ -156,10 +158,13 @@ def reports():
 
 @app.route('/finance/reports/new_rate', methods=["GET", "POST"])
 def new_rate():
+    
+    global check_if_rate
+    
     if request.method == 'POST':
         rate = request.form.get('new_rate')
         rate = float(rate)
-        update_databases.add_new_rate(rate)
+        update_databases.add_new_rate_conventional(rate, check_if_rate[1])
 
         flash('Rate added successfully.', category='success')
 
