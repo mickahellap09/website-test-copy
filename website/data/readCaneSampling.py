@@ -3,12 +3,10 @@ import sqlite3
 import numpy as np
 from os import listdir
 
-def readTable(filename):
+def readTable(filename, file_type):
 	#load in excel file and make it active
 	wb_obj = openpyxl.load_workbook(filename, data_only=True)
 	sheet = wb_obj.active
-
-	# print(sheet.max_row)
 
 	#delete rows that are empty at the end of the file
 	rowIndex = 0
@@ -18,11 +16,12 @@ def readTable(filename):
 			break
 		rowIndex+=1
 
-	# print(sheet.max_row)
+	if file_type == "pb":
+		sheet.delete_cols(sheet.max_column)
 
 	#instantiate variables and create 2D array (a)
+	columns = sheet.max_column + 1
 	sheet_length = sheet.max_row
-	columns = 10
 	rows = sheet_length-4
 	colIndex = 0
 	rowIndex = 0
@@ -42,6 +41,7 @@ def readTable(filename):
 
 				# print(rowIndex)
 				a[rowIndex][1] = shiftValue
+
 				a[rowIndex][colIndex%columns] = cell.value
 			else:
 				a[rowIndex][colIndex%columns] = "None"
@@ -57,17 +57,20 @@ def readTable(filename):
 
 	return a, b
 
-def addToDatabase(filepath, a, date):
+def addToDatabase(filepath, a, date, file_type):
 	cane_sampling_connection = sqlite3.connect(filepath + 'cane_sampling.sqlite3', check_same_thread=False)
 	cane_sampling_cursor = cane_sampling_connection.cursor()
 
-	#create report table
-	fullCreateString = f'''CREATE TABLE IF NOT EXISTS REPORT{date}(sr INTEGER, shift TEXT, 'shift details' TEXT, token INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, brix REAL, pol REAL, pty REAL, rec REAL, rec_2 REAL, ded INTEGER);'''
-	cane_sampling_cursor.executescript(fullCreateString)
-
+	#basically po# vs no po#
+	if file_type == "lab":
+		fullCreateString = f'''CREATE TABLE IF NOT EXISTS REPORT{date}(sr INTEGER, shift TEXT, remarks TEXT, token INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, brix REAL, pol REAL, pty REAL, rec REAL, rec_2 REAL, ded INTEGER);'''
+		fullInsertString = f'INSERT OR REPLACE INTO REPORT{date} VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'
+	else:
+		fullCreateString = f'''CREATE TABLE IF NOT EXISTS REPORT{date}(sr INTEGER, shift TEXT, 'pb_no' INTEGER, token INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, brix REAL, pol REAL, pty REAL, rec REAL, rec_2 REAL, ded INTEGER, remarks TEXT);'''
+		fullInsertString = f'INSERT OR REPLACE INTO REPORT{date} VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'
 
 	#store all values in a into the table
-	fullInsertString = f'INSERT OR REPLACE INTO REPORT{date} VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'
+	cane_sampling_cursor.executescript(fullCreateString)
 	cane_sampling_cursor.executemany(fullInsertString, a);
 
 	cane_sampling_connection.commit()
@@ -91,17 +94,27 @@ def averageTable(filepath, b, date):
 
 if __name__ == '__main__':
 	userDirectory = '/Users/balahaha/Desktop/website-test-copy-master/website/data/databases/'
-	directory = 'Excel_data/cane_sampling_lab/'
+	directories = ['Excel_data/cane_sampling_lab/', 'Excel_data/cane_sampling_pb/']
 
-	#collecting all the cane sampling files
-	allFiles = listdir(directory)
-	allFiles = allFiles[1:]
+	#go through both types of cane sampling files
+	for directory in directories:
+		#collecting all the cane sampling files
+		allFiles = listdir(directory)
 
-	#go through all cane sampling files and perform functionality
-	for file in allFiles:
-		filename = directory + file
-		[a, b] = readTable(filename)
-		date = "_" + filename[-15:-13] + "_" + filename[-12:-10] + "_" + filename[-9:-5]
-		addToDatabase(userDirectory, a, date)
-		averageTable(userDirectory, b, date)
+		#go through all cane sampling files in this directory and perform functionality
+		for file in allFiles:
+			if file.endswith(".xlsx") and file.startswith("Cane"):
+				#get file type 
+				filename = directory + file
+				file_type = filename.split("/")[1].split("_")[2]
+
+				#read in table and store in matrices a and b
+				[a, b] = readTable(filename, file_type)
+
+				#extract date from excel file name
+				date = "_" + filename[-15:-13] + "_" + filename[-12:-10] + "_" + filename[-9:-5]
+
+				#add all info from matrixes a and b into database tables
+				addToDatabase(userDirectory, a, date, file_type)
+				averageTable(userDirectory, b, date)
 
