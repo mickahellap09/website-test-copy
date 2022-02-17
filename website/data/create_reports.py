@@ -108,8 +108,5 @@ def update_sheets():
                 value1 = value[1] + 1
                 worksheet.write(value1,column_number, value[0])
                     
-
         conn.close()
     workbook.close()
-    
-update_sheets()

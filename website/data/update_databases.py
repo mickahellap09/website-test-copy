@@ -364,13 +364,19 @@ def check_conventional(bank_name):
 
     current_date = datetime.date.today().strftime('%d/%m/%Y')
 
-    cur.execute(
-        'SELECT id FROM dates WHERE dates.date = (?)', (current_date,))
-    today_date_id = cur.fetchone()[0]
-
-    cur.execute(
-        'SELECT rate FROM rates WHERE rates.date_id = (?)', (today_date_id,))
-    today_rate = cur.fetchone()
+    try:
+        cur.execute(
+            'SELECT id FROM dates WHERE dates.date = (?)', (current_date,))
+        today_date_id = cur.fetchone()[0]
+    except:
+        input_dates(bank_name)
+    
+    try:
+        cur.execute(
+            'SELECT rate FROM rates WHERE rates.date_id = (?)', (today_date_id,))
+        today_rate = cur.fetchone()
+    except:
+        input_dates(bank_name)
 
     if current_day == 1 and today_rate == (None,):
         return (True, bank_name)

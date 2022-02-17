@@ -1,3 +1,8 @@
+import win32gui, win32con
+
+hide = win32gui.GetForegroundWindow()
+win32gui.ShowWindow(hide, win32con.SW_HIDE)
+
 import PySimpleGUI as sg
 import sqlite3
 import update_databases
@@ -10,7 +15,7 @@ cur_banks.execute('SELECT name FROM banks')
 bank_names = cur_banks.fetchall()
 
 # Add some color to the window
-sg.theme('DarkTeal9')
+sg.theme('DarkBlue13')
 
 layout = [
     [sg.Text('Please fill out the following fields:')],
@@ -46,3 +51,7 @@ while True:
             break
         
         update_databases.add_new_transaction_payment(name_of_bank, transaction_type, debit_or_credit, amount, date)
+        
+        window.FindElement('bank_name').Update('')
+        window.FindElement('date').Update('')
+        window.FindElement('amount').Update('')

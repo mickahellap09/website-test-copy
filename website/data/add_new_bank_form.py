@@ -1,5 +1,9 @@
+import win32gui, win32con
+
+hide = win32gui.GetForegroundWindow()
+win32gui.ShowWindow(hide, win32con.SW_HIDE)
+
 import PySimpleGUI as sg
-import pandas as pd
 import sqlite3
 import create_all_dbs
 
@@ -8,7 +12,7 @@ conn_banks = sqlite3.connect(
 cur_banks = conn_banks.cursor()
 
 # Add some color to the window
-sg.theme('DarkTeal9')
+sg.theme('DarkBlue13')
 
 layout = [
     [sg.Text('Please fill out the following fields:')],
@@ -56,3 +60,10 @@ while True:
             cur.execute('INSERT INTO rates(rate, date_id) VALUES (?,?)', (rate, date_id,))
 
             conn.commit()
+        
+        window.FindElement('bank_name').Update('')
+        window.FindElement('date').Update('')
+        window.FindElement('amount').Update('')
+        window.FindElement('rate').Update('')
+        window.FindElement('conventional').Update(False)
+        window.FindElement('islamic').Update(False)

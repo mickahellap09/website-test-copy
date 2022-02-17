@@ -1,6 +1,4 @@
 import sqlite3
-
-from openpyxl import Workbook
     
 def update():
     
@@ -36,3 +34,4 @@ def start():
     except:pass
 
     conn_banks.commit()
+    
